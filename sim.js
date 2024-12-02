@@ -39,8 +39,14 @@ function equilibrium_position(k, m, g) { return (m * g) / k; }
 
 function mousePressed(event)
 {
-    offset = displacement - mouseX;
-    moving = true;
+    if (vertical) {
+	console.log("oh no!!!!!");
+    } else if (abs(mouseY - 100) <= 50) {
+	offset = displacement - mouseX;
+	moving = true;
+    } else {
+	console.log(":(" + abs(mouseY - 100));
+    }
 }
 
 function mouseReleased(event)
@@ -50,8 +56,9 @@ function mouseReleased(event)
 
 const G = 9.8;
 
-moving = false;
-offset = -1;
+let moving = false;
+let offset = -1;
+let vertical = false;
 
 function setup()
 {
@@ -88,6 +95,9 @@ function draw()
     }
 
     background(200);
+
+    pause = createButton("Pause");
+    pause.position(500, 300);
 
     p_eel = min(E_el(spring_stiffness, displacement) / total_energy, 1);
     p_ek = min(E_k(mass, velocity) / total_energy, 1);

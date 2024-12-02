@@ -39,32 +39,13 @@ function equilibrium_position(k, m, g) { return (m * g) / k; }
 
 function mousePressed(event)
 {
-    offset = springs[0].weight.displacement - mouseX;
+    offset = displacement - mouseX;
     moving = true;
 }
 
 function mouseReleased(event)
 {
     moving = false;
-}
-
-class Weight {
-    constructor(mass, displacement = 0, velocity = 0, acceleration = 0) {
-	this.mass = mass;                 /* g(?) */
-	this.displacement = displacement; /* meters */
-	this.velocity = velocity;         /* m/s */
-	this.acceleration = acceleration; /* m/s^2 */
-
-	this.max_d = this.max_v = this.max_a = 0;
-    }
-}
-
-class Spring {
-    constructor(stiffness, weight, length) {
-	this.weight = weight;
-	this.stiffness = stiffness; /* N/m */
-	this.equilibrium = length;  /* meters */
-    }
 }
 
 const G = 9.8;
@@ -77,48 +58,52 @@ function setup()
     createCanvas(windowWidth, windowHeight);
 //    springs = [new Spring(2, new Weight(100, 50), 300)];
 
-    // k, (m, d, v, a), e
-    springs = [new Spring(2, new Weight(100, 30), 100)];
+    spring_stiffness = 2;
+    spring_length = 100;
 
-    total_energy = E_el(springs[0].stiffness, springs[0].weight.displacement);
+    mass = 100;
+    displacement = 30;
+    velocity = acceleration = 0
+    max_d = max_v = max_a = 0;
+
+    // k, (m, d, v, a), e
+    total_energy = E_el(spring_stiffness, displacement);
 }
 
 function draw()
 {
-    for (s of springs) {
-	net_force = F_spring(s.stiffness, s.weight.displacement);
-	s.weight.acceleration = net_force / s.weight.mass;
-	s.weight.velocity += s.weight.acceleration;
-	s.weight.displacement += s.weight.velocity;
+    net_force = F_spring(spring_stiffness, displacement);
+    acceleration = net_force / mass;
+    velocity += acceleration;
+    displacement += velocity;
 
-	s.weight.max_d = max(s.weight.max_d, s.weight.displacement);
-	s.weight.max_v = max(s.weight.max_v, s.weight.velocity);
-	s.weight.max_a = max(s.weight.max_a, s.weight.acceleration);
+    max_d = max(max_d, displacement);
+    max_v = max(max_v, velocity);
+    max_a = max(max_a, acceleration);
 
-	if (moving) {
-	    s.weight.displacement = offset + mouseX;
-	    s.weight.acceleration = s.weight.velocity = 0;
-	    total_energy = E_el(springs[0].stiffness, springs[0].weight.displacement);
-	}
-
-	background(200);
-
-	p_eel = min(E_el(s.stiffness, s.weight.displacement) / total_energy, 1);
-	p_ek = min(E_k(s.weight.mass, s.weight.velocity) / total_energy, 1);
-
-	text("Elastic energy", 450, 400);
-	text("Kinetic energy", 600, 400);
-	arc(500, 500, 100, 100, 0, 2 * PI * p_eel);
-	arc(650, 500, 100, 100, 0, 2 * PI * p_ek);
-
-	text("d = " + s.weight.displacement, 200, 200);
-	text("v = " + s.weight.velocity, 200, 225);
-	text("a = " + s.weight.acceleration, 200, 250);
-	text("(max: " + s.weight.max_d + ")", 400, 200);
-	text("(max: " + s.weight.max_v + ")", 400, 225);
-	text("(max: " + s.weight.max_a + ")", 400, 250);
-
-	horizontal_spring(0, s.equilibrium + s.weight.displacement, 100, 20, 10, s.equilibrium);
-	//    vertical_spring(0, equilibrium + displacement, 100, 20, 10, equilibrium);
+    if (moving) {
+	displacement = offset + mouseX;
+	acceleration = velocity = 0;
+	total_energy = E_el(spring_stiffness, displacement);
     }
+
+    background(200);
+
+    p_eel = min(E_el(spring_stiffness, displacement) / total_energy, 1);
+    p_ek = min(E_k(mass, velocity) / total_energy, 1);
+
+    text("Elastic energy", 450, 400);
+    text("Kinetic energy", 600, 400);
+    arc(500, 500, 100, 100, 0, 2 * PI * p_eel);
+    arc(650, 500, 100, 100, 0, 2 * PI * p_ek);
+
+    text("d = " + displacement, 200, 200);
+    text("v = " + velocity, 200, 225);
+    text("a = " + acceleration, 200, 250);
+    text("(max: " + max_d + ")", 400, 200);
+    text("(max: " + max_v + ")", 400, 225);
+    text("(max: " + max_a + ")", 400, 250);
+
+    horizontal_spring(0, spring_length + displacement, 100, 20, 10, spring_length);
+    //    vertical_spring(0, equilibrium + displacement, 100, 20, 10, equilibrium);
 }

@@ -75,11 +75,12 @@ offset = -1;
 function setup()
 {
     createCanvas(windowWidth, windowHeight);
-    springs = [new Spring(2, new Weight(100, 50), 300)];
-    total_energy = E_el(2, 50);
+//    springs = [new Spring(2, new Weight(100, 50), 300)];
 
     // k, (m, d, v, a), e
-//    springs = [new Spring(2, new Weight(100, 30), 100)];
+    springs = [new Spring(2, new Weight(100, 30), 100)];
+
+    total_energy = E_el(springs[0].stiffness, springs[0].weight.displacement);
 }
 
 function draw()
@@ -97,6 +98,7 @@ function draw()
 	if (moving) {
 	    s.weight.displacement = offset + mouseX;
 	    s.weight.acceleration = s.weight.velocity = 0;
+	    total_energy = E_el(springs[0].stiffness, springs[0].weight.displacement);
 	}
 
 	background(200);
@@ -104,12 +106,17 @@ function draw()
 	p_eel = min(E_el(s.stiffness, s.weight.displacement) / total_energy, 1);
 	p_ek = min(E_k(s.weight.mass, s.weight.velocity) / total_energy, 1);
 
+	text("Elastic energy", 450, 400);
+	text("Kinetic energy", 600, 400);
 	arc(500, 500, 100, 100, 0, 2 * PI * p_eel);
 	arc(650, 500, 100, 100, 0, 2 * PI * p_ek);
 
-	text("(" + s.weight.max_d + ") d = " + s.weight.displacement, 200, 200);
-	text("(" + s.weight.max_v + ") v = " + s.weight.velocity, 200, 250);
-	text("(" + s.weight.max_a + ") a = " + s.weight.acceleration, 200, 225);
+	text("d = " + s.weight.displacement, 200, 200);
+	text("v = " + s.weight.velocity, 200, 225);
+	text("a = " + s.weight.acceleration, 200, 250);
+	text("(max: " + s.weight.max_d + ")", 400, 200);
+	text("(max: " + s.weight.max_v + ")", 400, 225);
+	text("(max: " + s.weight.max_a + ")", 400, 250);
 
 	horizontal_spring(0, s.equilibrium + s.weight.displacement, 100, 20, 10, s.equilibrium);
 	//    vertical_spring(0, equilibrium + displacement, 100, 20, 10, equilibrium);

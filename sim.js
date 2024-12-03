@@ -45,7 +45,7 @@ function mousePressed(event)
 	offset = displacement - mouseX;
 	moving = true;
     } else {
-	console.log(":(" + abs(mouseY - 100));
+	console.log(abs(mouseY - 100));
     }
 }
 
@@ -56,14 +56,23 @@ function mouseReleased(event)
 
 const G = 9.8;
 
-let moving = false;
-let offset = -1;
-let vertical = false;
+let paused = false;   /* simulation paused? */
+let moving = false;   /* mass being moved? */
+let offset = -1;      /* distance between mouse and mass */
+let vertical = false; /* vertical or horizontal system */
 
 function setup()
 {
     createCanvas(windowWidth, windowHeight);
 //    springs = [new Spring(2, new Weight(100, 50), 300)];
+
+    pause = createButton("Pause");
+    pause.position(500, 300);
+    pause.mousePressed(() => { paused = !paused; });
+
+    step = createButton("Step forward");
+    step.position(600, 300);
+    step.mousePressed(() => { if (paused) draw(true); });
 
     spring_stiffness = 2;
     spring_length = 100;
@@ -77,27 +86,27 @@ function setup()
     total_energy = E_el(spring_stiffness, displacement);
 }
 
-function draw()
+function draw(force = false)
 {
-    net_force = F_spring(spring_stiffness, displacement);
-    acceleration = net_force / mass;
-    velocity += acceleration;
-    displacement += velocity;
-
-    max_d = max(max_d, displacement);
-    max_v = max(max_v, velocity);
-    max_a = max(max_a, acceleration);
-
     if (moving) {
 	displacement = offset + mouseX;
 	acceleration = velocity = 0;
 	total_energy = E_el(spring_stiffness, displacement);
     }
 
-    background(200);
+    if (!paused || force) {
+	/* simulation code. all calculation is done here */
+	net_force = F_spring(spring_stiffness, displacement);
+	acceleration = net_force / mass;
+	velocity += acceleration;
+	displacement += velocity;
 
-    pause = createButton("Pause");
-    pause.position(500, 300);
+	max_d = max(max_d, displacement);
+	max_v = max(max_v, velocity);
+	max_a = max(max_a, acceleration);
+    }
+
+    background(200);
 
     p_eel = min(E_el(spring_stiffness, displacement) / total_energy, 1);
     p_ek = min(E_k(mass, velocity) / total_energy, 1);

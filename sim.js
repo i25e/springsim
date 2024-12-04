@@ -1,4 +1,16 @@
-function horizontal_spring(start, end, y, width, turns, equilibrium)
+function F_g(m, g) { return m * g; }
+function F_spring(k, d) { return k * d; }
+function E_g(m, g, h) { return m * g * h; }
+function E_k(m, v) { return 0.5 * m * v * v; }
+function E_el(k, d) { return 0.5 * k * d * d; }
+function equilibrium() {
+    if (vertical.checked())
+	return (mass * G) / k;
+    else
+	return 0;
+}
+
+function horizontal_spring(start, end, y, width, turns)
 {
     step = (end - start) / turns;
 
@@ -8,13 +20,13 @@ function horizontal_spring(start, end, y, width, turns, equilibrium)
     }
 
     stroke("red");
-    line(equilibrium, y - 50, equilibrium, y + 50);
+    line(length + equilibrium(), y - 50, length + equilibrium(), y + 50);
 
     stroke("black");
     circle(end, y, 50);
 }
 
-function vertical_spring(start, end, x, width, turns, equilibrium)
+function vertical_spring(start, end, x, width, turns)
 {
     step = (end - start) / turns;
 
@@ -24,37 +36,26 @@ function vertical_spring(start, end, x, width, turns, equilibrium)
     }
 
     stroke("red");
-    line(x - 50, equilibrium, x + 50, equilibrium);
+    line(x - 50, length + equilibrium(), x + 50, length + equilibrium());
 
     stroke("black");
     circle(x, end, 50);
 }
-
-function F_g(m, g) { return m * g; }
-function F_spring(k, d) { return -k * d; }
-function E_g(m, g, h) { return m * g * h; }
-function E_k(m, v) { return 0.5 * m * v * v; }
-function E_el(k, d) { return 0.5 * k * d * d; }
-function equilibrium_position(k, m, g) { return (m * g) / k; }
-
 function mousePressed(event)
 {
     if (mouseY <= 50) /* top 50 pixels reserved for controls */
 	return;
 
     offset = displacement - (vertical.checked() ? mouseY : mouseX);
-    moving = true;
+    dragging = true;
 }
 
-function mouseReleased(event)
-{
-    moving = false;
-}
+function mouseReleased(event) { dragging = false; }
 
 const G = 9.8;
 
 let paused = false;   /* simulation paused? */
-let moving = false;   /* mass being moved? */
+let dragging = false;   /* mass being moved? */
 let offset = -1;      /* distance between mouse and mass */
 
 function setup()
@@ -67,9 +68,9 @@ function setup()
     pause = createButton("Pause");
     pause.position(105, 20);
     pause.mousePressed(() => {
-	    paused = !paused;
-	    pause.html(paused ? "Unpause" : "Pause");
-	});
+	paused = !paused;
+	pause.html(paused ? "Unpause" : "Pause");
+    });
 
     step = createButton("Step forward");
     step.position(180, 20);
@@ -77,29 +78,32 @@ function setup()
 
     reset = createButton("Reset");
     reset.position(280, 20);
-    reset.mousePressed(() => { displacement = velocity = acceleration = 0 });
+    reset.mousePressed(() => {
+	displacement = equilibrium();
+	velocity = acceleration = 0
+    });
 
-    spring_stiffness = 2;
-    spring_length = 100;
+    k = 2;
+    length = 100;
 
     mass = 100;
     displacement = velocity = acceleration = 0
     max_d = max_v = max_a = 0;
 
     // k, (m, d, v, a), e
-    total_energy = E_el(spring_stiffness, displacement);
+    total_energy = E_el(k, displacement);
 }
 
 function draw(force = false)
 {
-    if (moving) {
-	console.log("fuck");
+    if (dragging) {
 	displacement = offset + (vertical.checked() ? mouseY : mouseX);
 	acceleration = velocity = 0;
-	total_energy = E_el(spring_stiffness, displacement);
+	total_energy = E_el(k, displacement);
     } else if (!paused || force) {
 	/* simulation code. all calculation is done here */
-	net_force = F_spring(spring_stiffness, displacement);
+	net_force = F_spring(k, -displacement);
+	net_force += vertical.checked() ? F_g(mass, G) : 0;
 	acceleration = net_force / mass;
 	velocity += acceleration;
 	displacement += velocity;
@@ -110,7 +114,7 @@ function draw(force = false)
     }
 
     background(200);
-    p_eel = min(E_el(spring_stiffness, displacement) / total_energy, 1);
+    p_eel = min(E_el(k, displacement) / total_energy, 1);
     p_ek = min(E_k(mass, velocity) / total_energy, 1);
 
     text("Elastic energy", 450, 400);
@@ -126,7 +130,7 @@ function draw(force = false)
     text("(max: " + max_a + ")", 400, 250);
 
     if (vertical.checked())
-	vertical_spring(0, spring_length + displacement, 400, 25, 10, spring_length);
+	vertical_spring(0, length + displacement, 400, 25, 10);
     else
-	horizontal_spring(0, spring_length + displacement, 100, 25, 10, spring_length);
+	horizontal_spring(0, length + displacement, 100, 25, 10);
 }

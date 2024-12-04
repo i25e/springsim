@@ -8,10 +8,10 @@ function horizontal_spring(start, end, y, width, turns, equilibrium)
     }
 
     stroke("red");
-    line(equilibrium, 50, equilibrium, 150);
+    line(equilibrium, y - 50, equilibrium, y + 50);
 
     stroke("black");
-    circle(end, y, 40);
+    circle(end, y, 50);
 }
 
 function vertical_spring(start, end, x, width, turns, equilibrium)
@@ -24,10 +24,10 @@ function vertical_spring(start, end, x, width, turns, equilibrium)
     }
 
     stroke("red");
-    line(50, equilibrium, 150, equilibrium);
+    line(x - 50, equilibrium, x + 50, equilibrium);
 
     stroke("black");
-    circle(x, end, 40);
+    circle(x, end, 50);
 }
 
 function F_g(m, g) { return m * g; }
@@ -39,14 +39,11 @@ function equilibrium_position(k, m, g) { return (m * g) / k; }
 
 function mousePressed(event)
 {
-    if (vertical) {
-	console.log("oh no!!!!!");
-    } else if (abs(mouseY - 100) <= 50) {
-	offset = displacement - mouseX;
-	moving = true;
-    } else {
-	console.log(abs(mouseY - 100));
-    }
+    if (mouseY <= 50) /* top 50 pixels reserved for controls */
+	return;
+
+    offset = displacement - (vertical.checked() ? mouseY : mouseX);
+    moving = true;
 }
 
 function mouseReleased(event)
@@ -59,27 +56,34 @@ const G = 9.8;
 let paused = false;   /* simulation paused? */
 let moving = false;   /* mass being moved? */
 let offset = -1;      /* distance between mouse and mass */
-let vertical = false; /* vertical or horizontal system */
 
 function setup()
 {
     createCanvas(windowWidth, windowHeight);
-//    springs = [new Spring(2, new Weight(100, 50), 300)];
+
+    vertical = createCheckbox("Vertical");
+    vertical.position(20, 20);
 
     pause = createButton("Pause");
-    pause.position(500, 300);
-    pause.mousePressed(() => { paused = !paused; });
+    pause.position(105, 20);
+    pause.mousePressed(() => {
+	    paused = !paused;
+	    pause.html(paused ? "Unpause" : "Pause");
+	});
 
     step = createButton("Step forward");
-    step.position(600, 300);
+    step.position(180, 20);
     step.mousePressed(() => { if (paused) draw(true); });
+
+    reset = createButton("Reset");
+    reset.position(280, 20);
+    reset.mousePressed(() => { displacement = velocity = acceleration = 0 });
 
     spring_stiffness = 2;
     spring_length = 100;
 
     mass = 100;
-    displacement = 30;
-    velocity = acceleration = 0
+    displacement = velocity = acceleration = 0
     max_d = max_v = max_a = 0;
 
     // k, (m, d, v, a), e
@@ -89,12 +93,11 @@ function setup()
 function draw(force = false)
 {
     if (moving) {
-	displacement = offset + mouseX;
+	console.log("fuck");
+	displacement = offset + (vertical.checked() ? mouseY : mouseX);
 	acceleration = velocity = 0;
 	total_energy = E_el(spring_stiffness, displacement);
-    }
-
-    if (!paused || force) {
+    } else if (!paused || force) {
 	/* simulation code. all calculation is done here */
 	net_force = F_spring(spring_stiffness, displacement);
 	acceleration = net_force / mass;
@@ -107,7 +110,6 @@ function draw(force = false)
     }
 
     background(200);
-
     p_eel = min(E_el(spring_stiffness, displacement) / total_energy, 1);
     p_ek = min(E_k(mass, velocity) / total_energy, 1);
 
@@ -123,6 +125,8 @@ function draw(force = false)
     text("(max: " + max_v + ")", 400, 225);
     text("(max: " + max_a + ")", 400, 250);
 
-    horizontal_spring(0, spring_length + displacement, 100, 20, 10, spring_length);
-    //    vertical_spring(0, equilibrium + displacement, 100, 20, 10, equilibrium);
+    if (vertical.checked())
+	vertical_spring(0, spring_length + displacement, 400, 25, 10, spring_length);
+    else
+	horizontal_spring(0, spring_length + displacement, 100, 25, 10, spring_length);
 }
